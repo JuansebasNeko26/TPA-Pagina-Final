@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TPA - Versión Final</title>
+  <style>
+    /* Evitar scroll horizontal y forzar ancho completo */
+    html, body {
+      overflow-x: hidden;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Arial', sans-serif;
+    }
+    body {
+      background: #111;
+      min-height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+    /* Contenedor de videos en el fondo */
+    .video-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
+    .video-container video {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: opacity 1s ease-in-out;
+    }
+    /* Video2 inicia oculto */
+    #video2 {
+      opacity: 0;
+    }
+    /* Resto de la estructura */
+    .container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+    .corner-square {
+      position: absolute;
+      width: 250px;
+      height: 250px;
+      background: rgba(40, 40, 40, 0.85);
+      transition: all 0.3s ease;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      border: 2px solid #8B7355;
+      z-index: 1;
+      border-radius: 25px;
+    }
+    .corner-square:hover {
+      background: rgba(60, 60, 60, 0.9);
+      transform: scale(1.05);
+      z-index: 3 !important;
+    }
+    .corner-square:nth-child(1) { top: 20px; left: 20px; }
+    .corner-square:nth-child(2) { top: 20px; right: 20px; }
+    .corner-square:nth-child(3) { bottom: 20px; left: 20px; }
+    .corner-square:nth-child(4) { bottom: 20px; right: 20px; }
+    .section-content {
+      color: #f5f5f5;
+      text-align: center;
+    }
+    h2 {
+      font-size: 1.8em;
+      margin-bottom: 15px;
+      color: #8B7355;
+    }
+    p {
+      font-size: 1.1em;
+      opacity: 0.9;
+    }
+    .center-diamond {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 400px;
+      height: 400px;
+      background: rgba(139, 115, 85, 0.1);
+      border: 2px solid #8B7355;
+      clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+    /* Texto responsivo en el rombo central */
+    .center-diamond p {
+      font-size: clamp(0.9em, 2vw, 1.1em);
+    }
+    .content-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(17, 17, 17, 0.97);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 500;
+      animation: expand 0.5s ease-out forwards;
+    }
+    .content-overlay.active {
+      display: flex;
+    }
+    .content-card {
+      background: rgba(40, 40, 40, 0.95);
+      padding: 40px;
+      border-radius: 15px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: scale(0);
+      animation: cardAppear 0.5s 0.3s ease-out forwards;
+      border: 1px solid #8B7355;
+    }
+    .interactive-content {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .interactive-section {
+      margin-bottom: 30px;
+      padding: 30px;
+      background: rgba(60, 60, 60, 0.7);
+      border-radius: 15px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-height: 120px;
+      position: relative;
+      padding-left: clamp(60px, 10vw, 100px);
+    }
+    .interactive-section::before {
+      content: '';
+      position: absolute;
+      left: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: clamp(40px, 8vw, 60px);
+      height: clamp(40px, 8vw, 60px);
+      background-size: contain;
+      background-repeat: no-repeat;
+    }
+    /* Rutas de imágenes para los símbolos */
+    .section-symbol-1::before { background-image: url("./Media/simbolo1.png"); }
+    .section-symbol-2::before { background-image: url("./Media/simbolo2.png"); }
+    .section-symbol-3::before { background-image: url("./Media/simbolo3.png"); }
+    .section-symbol-4::before { background-image: url("./Media/simbolo4.png"); }
+    .section-symbol-5::before { background-image: url("./Media/simbolo5.png"); }
+    .section-symbol-6::before { background-image: url("./Media/simbolo6.png"); }
+    .section-symbol-7::before { background-image: url("./Media/simbolo7.png"); }
+    .section-symbol-8::before { background-image: url("./Media/simbolo8.png"); }
+    .section-symbol-9::before { background-image: url("./Media/simbolo9.png"); }
+    /* Para "Mitos vs Realidad", se usan símbolos 10 y 11 */
+    .section-symbol-10::before { background-image: url("./Media/simbolo10.png"); }
+    .section-symbol-11::before { background-image: url("./Media/simbolo11.png"); }
+    /* Para "Identificación y prevención", se usan símbolos 12 en adelante */
+    .section-symbol-12::before { background-image: url("./Media/simbolo12.png"); }
+    .section-symbol-13::before { background-image: url("./Media/simbolo13.png"); }
+    .section-symbol-14::before { background-image: url("./Media/simbolo14.png"); }
+    .section-symbol-15::before { background-image: url("./Media/simbolo15.png"); }
+.section-symbol-20::before { background-image: url("./Media/simbolo20.png"); }
+    /* Estilo para el contenido oculto */
+
+    .hidden-content {
+      margin-top: 15px;
+      padding-top: 15px;
+      border: 1px solid #000;
+      font-size: 1.1em;
+      line-height: 1.6;
+      color: #fff;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height 0.5s ease, opacity 0.5s ease;
+    }
+    .hidden-content.open {
+      max-height: 800px;
+      opacity: 1;
+    }
+    @media (max-width: 768px) {
+      .hidden-content.open {
+        max-height: 2000px;
+      }
+    }
+    .hidden-content ul {
+      padding-left: 20px;
+      margin: 15px 0;
+    }
+    .hidden-content li {
+      margin-bottom: 10px;
+    }
+    .hidden-content blockquote {
+      border-left: 3px solid #8B7355;
+      padding-left: 15px;
+      margin: 15px 0;
+      font-style: italic;
+      color: #ccc;
+    }
+    @keyframes expand {
+      from { clip-path: circle(0% at 50% 50%); }
+      to { clip-path: circle(150% at 50% 50%); }
+    }
+    @keyframes cardAppear {
+      to { transform: scale(1); }
+    }
+    .close-btn {
+      position: absolute;
+      top: 30px;
+      right: 30px;
+      color: #8B7355;
+      cursor: pointer;
+      font-size: 2em;
+      transition: transform 0.3s ease;
+      z-index: 1000;
+    }
+    .close-btn:hover {
+      transform: rotate(90deg);
+    }
+    .interactive-section h3 {
+      font-size: clamp(1.2em, 2vw, 1.6em);
+      color: #8B7355;
+      margin-bottom: 15px;
+    }
+    @media (max-width: 768px) {
+      #background-video {
+        object-position: left center;
+        left: -270px;
+        bottom: -1px;
+      }
+      .corner-square {
+        width: 40vw;
+        height: 40vw;
+        padding: 10px;
+      }
+      h2 {
+        font-size: 1.2em;
+      }
+      p {
+        font-size: 0.9em;
+      }
+      .center-diamond {
+        width: 80vw;
+        height: 80vw;
+      }
+      .interactive-content {
+        padding: 10px;
+        width: 100%;
+      }
+      .interactive-section {
+        margin-bottom: 20px;
+        padding: 20px;
+        padding-left: clamp(60px, 10vw, 80px);
+      }
+      .interactive-section h3 {
+        font-size: clamp(1.1em, 2vw, 1.4em);
+      }
+      .hidden-content {
+        font-size: 0.9em;
+      }
+      .close-btn {
+        top: 10px;
+        right: 10px;
+        font-size: 2.5em;
+        z-index: 1001;
+      }
+    }
+    @media screen and (max-width: 768px) and (orientation: landscape) {
+      .container, .content-overlay {
+        display: none;
+      }
+      body::after {
+        content: "Por favor gira tu dispositivo a modo vertical para ver la página.";
+        display: block;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #8B7355;
+        font-size: 1.5em;
+        text-align: center;
+        padding: 20px;
+      }
+    }
+    /* Botón flotante de información */
+    #infoButton {
+position: fixed;
+  right: 10px;
+  bottom: 10px;
+  width: clamp(2em, 3vw, 3em);
+  cursor: pointer;
+  z-index: 1500;
+    }
+    #infoButton img {
+      width: 100%;
+      height: auto;
+    }
+    /* Modal de información */
+    #infoModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(17, 17, 17, 0.97);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 20px;
+    }
+    #infoModal .modal-content {
+      background: #222;
+      padding: 20px;
+      border-radius: 10px;
+      color: #f5f5f5;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    #infoModal .close-info {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 1.5em;
+      cursor: pointer;
+      color: #8B7355;
+    }
+  </style>
+</head>
+<body>
+  <!-- Contenedor de videos en el fondo -->
+  <div class="video-container">
+    <video id="video2" autoplay muted>
+      <source src="./Media/video1.mp4" type="video/mp4">
+      Tu navegador no soporta videos HTML5.
+    </video>
+    <video id="video1" autoplay muted>
+      <source src="./Media/video2.mp4" type="video/mp4">
+      Tu navegador no soporta videos HTML5.
+    </video>
+  </div>
+
+  <!-- Botón flotante de información -->
+  <div id="infoButton" onclick="openInfoModal()">
+    <img src="C:\Users\Biblio\Desktop\Media\simbolox.png" alt="Información">
+  </div>
+
+  <!-- Modal de información -->
+  <div id="infoModal">
+    <div class="modal-content">
+      <span class="close-info" onclick="closeInfoModal()">×</span>
+      <h2>Información del Trabajo</h2>
+      <p><strong>Autores:</strong> Juan Sebastian Gutierrez Garzón y Juan José Silva Quecan</p>
+      <p><strong>Universidad:</strong> Universidad Nacional de Colombia</p><p> </p>
+      <h3>Referencias</h3>
+      <ul>
+        <li>Alwin, N. (2006). <em>The causes of personality disorder</em>. In M. Sampson, R. McCubbin, & P. Tyrer (Eds.), <em>Personality disorder and community mental health teams: A practitioner’s guide</em>. Sussex, England: John Wiley & Sons, Ltd.</li>
+        <li>Asociación Psiquiátrica Americana. (2013). <em>Trastornos de personalidad</em>. En <em>Manual Diagnóstico y Estadístico de los Trastornos Mentales (5.ª ed.)</em>. Editorial Médica Panamericana.</li>
+        <li>Beck, A. (2015). <em>Theory of personality disorder</em>. En A. Beck, D. Davis, & A. Freeman (Eds.), <em>Cognitive therapy of personality disorders</em> (pp. 19-62). New York, NY: Guilford Press.</li>
+        <li>Bridley, A., & Daffin, L. (2024). <em>Trastornos de personalidad</em>. En <em>Fundamentals of Psychological Disorders</em>. Universidad Estatal de Washington.</li>
+        <li>Caligor, E. (2010). <em>An object relations model of personality and personality pathology</em>. En J. F. Clarkin, P. Fonagy, & G. O. Gabbard (Eds.), <em>Psychodynamic psychotherapy for personality disorders: A clinical handbook</em> (pp. 3–35). American Psychiatric Publishing, Inc.</li>
+        <li>Código Penal, Ley 599, art. 33, Diario Oficial No. 44.097, 24 de julio de 2000.</li>
+        <li>Corte Constitucional de Colombia. (1994). <em>Sentencia T-401 de 1994</em>.</li>
+        <li>Corte Constitucional de Colombia (2022). <em>Sentencia T-031 de 2022</em>.</li>
+        <li>Delgado, A., Medina, T., Ramírez, S., Mosquera, A. y Urrego, A. (2022). <em>Factores psicosociales predisponentes en el desarrollo del trastorno de personalidad antisocial: Una revisión de la literatura</em>. [Tesis de Pregrado, Universidad del Bosque].</li>
+        <li>Departamento Administrativo Nacional de Estadística (DANE) (2019). <em>Encuesta Nacional de Consumo de Sustancias Psicoactivas</em>.</li>
+        <li>Echeverry, J., Escobar, F., Martínez, J., Garzón, A., Gómez, D. (2002). <em>Trastorno de personalidad antisocial en condenados por homicidio en Pereira, Colombia</em>. Investigación en Salud, 4(2), 1-10.</li>
+        <li>Esteban, A., Páez, C., Ramírez, M., Campos, M., Duarte, L., Urrea, E. (2020). <em>Prevalencia y factores asociados con el acoso escolar en adolescentes</em>. Revista Cuidarte, 11(3). https://doi.org/10.15649/cuidarte.1000</li>
+        <li>Fernández, H., Pascual, B., Belloch, A. (2024). <em>Trastornos de la Personalidad</em>. En <em>Manual de Psicopatología</em>. McGraw Hill.</li>
+        <li>Gaynor, S., & Baird, S. (2007). <em>Personality disorders</em>. En D. Woods & J. Kanter (Eds.), <em>Understanding behavior disorders: A contemporary behavioral perspective</em>. Reno, NV: Context Press.</li>
+        <li>Gibbon, S., Khalifa, N., Cheung, N., Völlm, B., McCarthy, L. (2020). <em>Psychological interventions for antisocial personality disorder</em>. Cochrane Database Syst Rev, 9(9). https://doi.org/10.1002/14651858.CD007668.pub3</li>
+        <li>Kumari, V., Uddin, S., Premkumar, P., Young, S., Gudjonsson, G., Raghuvanshi, S., Das, M. (2014). <em>Lower anterior cingulate volume in seriously violent men with antisocial personality disorder or schizophrenia and a history of childhood abuse</em>. Australian and New Zealand Journal of Psychiatry, 48(2), 153-161.</li>
+        <li>Laboratorio de Economía de la Educación (LEE) de la Pontificia Universidad Javeriana. (2024). <em>Informe No. 94 El acoso escolar en los colegios colombianos: un análisis desde las pruebas PISA y el SUICE</em>. https://lee.javeriana.edu.co/publicaciones-y-documentos</li>
+        <li>Lis, Ó. (2016). <em>Trastornos de Personalidad y Violencia. Artículo de Reflexión para el Posconflicto Colombiano</em>. Facultad de Ciencias Económicas y Empresariales, 16(2), 5-19.</li>
+        <li>Medina, C., Álvis, A., Restrepo, J., Hoyos Zuluaga, E. (2019). <em>Rehabilitación de las funciones ejecutivas y la cognición social en sujetos con TPA vinculados al conflicto armado en Colombia</em>. Revista Argentina de Clínica Psicológica, 28(1), 92–104. https://doi.org/10.24205/03276716.2018.1073</li>
+        <li>Mejía, C. (2007). <em>Análisis de asociación entre el TPA y los trastornos por consumo de sustancias</em>. [Tesis de Magíster, Universidad de Antioquia].</li>
+        <li>Ministerio de Salud y Protección Social (2015). <em>Encuesta Nacional de Salud Mental</em>.</li>
+        <li>Ministerio de Justicia y del Derecho, Observatorio de Política Criminal. (2024). <em>Boletín de comportamiento del delito de Violencia Intrafamiliar (VIF): Primer Semestre del 2024</em>.</li>
+        <li>Stone, M. (2014). <em>The spectrum of borderline personality disorder: A neurophysiological view</em>. Current Topics in Behavioral Neurosciences, 21, 23-46.</li>
+        <li>Thompson, D.F., Ramos, C.L., Willett, J.K. (2014). <em>Psychopathy: clinical features, developmental basis and therapeutic challenges</em>. Journal of Clinical, 39(5), 485-95.</li>
+        <li>Tirado-Álvarez, M. M. (2010). <em>Necesidad de la creación de una sanción penal especial para sujetos con TPA</em>. Estudios Socio-Jurídicos, 12(1), 127–154.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="corner-square">
+      <div class="section-content">
+        <h2>¿Qué es el TPA?</h2>
+        <p>Definición y características</p>
+      </div>
+    </div>
+    <div class="corner-square">
+      <div class="section-content">
+        <h2>Contexto Colombiano</h2>
+        <p>Datos y estadísticas</p>
+      </div>
+    </div>
+    <div class="corner-square">
+      <div class="section-content">
+        <h2>Mitos vs Realidad</h2>
+        <p>Desmontando estigmas</p>
+      </div>
+    </div>
+    <div class="corner-square">
+      <div class="section-content">
+        <h2>Identificación y prevención</h2>
+        <p>Estrategias clave</p>
+      </div>
+    </div>
+    <div class="center-diamond">
+      <div class="section-content">
+        <h2>TPA</h2>
+        <p>Todo sobre el trastorno<br> contexto colombiano<br> identificación / prevención</p>
+      </div>
+    </div>
+    <div class="content-overlay">
+      <span class="close-btn" onclick="closeOverlay()">×</span>
+      <div class="content-card" id="overlayContent"></div>
+    </div>
+  </div>
+
+  <script>
+    let hoverTimeout;
+    window.addEventListener('load', () => {
+      const centerDiamond = document.querySelector('.center-diamond');
+      setMousePosition({target: centerDiamond});
+      setTimeout(() => {
+        showContent(centerDiamond);
+      }, 500);
+    });
+    document.querySelectorAll('.corner-square').forEach(square => {
+      square.addEventListener('mouseenter', (e) => {
+        square.style.zIndex = '3';
+        setMousePosition(e);
+        hoverTimeout = setTimeout(() => showContent(square), 1500);
+      });
+      square.addEventListener('mouseleave', () => {
+        clearTimeout(hoverTimeout);
+        if (!document.querySelector('.content-overlay').classList.contains('active')) {
+          square.style.zIndex = '1';
+        }
+      });
+      square.addEventListener('click', (e) => {
+        clearTimeout(hoverTimeout);
+        square.style.zIndex = '3';
+        setMousePosition(e);
+        showContent(square);
+      });
+    });
+    function setMousePosition(e) {
+      const rect = e.target.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      document.documentElement.style.setProperty('--mouse-x', `${x}px`);
+      document.documentElement.style.setProperty('--mouse-y', `${y}px`);
+    }
+    function toggleContent(element) {
+      const currentContent = element.querySelector('.hidden-content');
+      document.querySelectorAll('.interactive-section .hidden-content').forEach(content => {
+        if (content !== currentContent) {
+          content.classList.remove('open');
+        }
+      });
+      currentContent.classList.toggle('open');
+    }
+    function closeOverlay() {
+      document.querySelector('.content-overlay').classList.remove('active');
+      document.querySelectorAll('.corner-square').forEach(square => {
+        square.style.zIndex = '1';
+      });
+    }
+    function showContent(section) {
+      const overlay = document.querySelector('.content-overlay');
+      const content = document.getElementById('overlayContent');
+      const sectionContent = {
+        '¿Qué es el TPA?': `
+          <div class="interactive-content">
+            <div class="interactive-section section-symbol-1" onclick="toggleContent(this)">
+              <h3>Definición y Clasificación</h3>
+              <div class="hidden-content">
+                <p>El Trastorno de Personalidad Antisocial (TPA) es considerado una enfermedad mental, categorizado en el DSM-V (APA, 2013) dentro de los Trastornos de la Personalidad del Grupo B. Se caracteriza por:</p>
+                <ul>
+                  <li>Carencia de empatía</li>
+                  <li>Inestabilidad emocional</li>
+                  <li>Comportamiento dramático</li>
+                </ul>
+              </div>
+            </div>
+            <div class="interactive-section section-symbol-2" onclick="toggleContent(this)">
+              <h3>Características Clave del TPA</h3>
+              <div class="hidden-content">
+                <p>Los individuos con TPA presentan un marcado desinterés por las normas sociales y el bienestar de los demás, evidenciado en:</p>
+                <ul>
+                  <li>Incumplimiento sistemático de normas y leyes</li>
+                  <li>Falta de consideración por los derechos de los demás</li>
+                  <li>Dificultad para establecer relaciones interpersonales sanas</li>
+                </ul>
+              </div>
+            </div>
+            <div class="interactive-section section-symbol-5" onclick="toggleContent(this)">
+              <h3>Etiología</h3>
+              <div class="hidden-content">
+                <p>Esta sección presenta distintos puntos que explican el TPA desde diversos ámbitos. A continuación se listan:</p>
+                <ul>
+                  <li><strong>Biológico:</strong> Anomalías en estructuras cerebrales (corteza prefrontal y amígdala) y factores genéticos (Thompson, Ramos y Willett, 2014; Stone, 2014).</li>
+                  <li><strong>Infantil:</strong> Experiencias negativas en la infancia (ambientes disfuncionales, abuso y rechazo parental) que afectan la capacidad de establecer relaciones saludables (Kumari et al., 2014; Caligor & Clarkin, 2010).</li>
+                  <li><strong>Pensamientos y Comportamiento:</strong> Patrones de pensamiento distorsionados que justifican comportamientos destructivos y minimizan el daño (Beck, 2015).</li>
+                  <li><strong>Conductual:</strong> Modelado y refuerzo de conductas antisociales, sobre todo al observar figuras de autoridad (Gaynor y Baird, 2007).</li>
+                  <li><strong>Social:</strong> Factores como maltrato infantil, pobreza, desempleo, violencia doméstica y denigración social influyen en el desarrollo del TPA (Alwin, 2006; Bridley, 2024; Delgado et al., 2022).</li>
+                </ul>
+                <p>Estas perspectivas fundamentan nuestra propuesta de intervención: informar sobre la etiología y el curso del trastorno, reestructurar patrones de pensamiento y abordar factores familiares y sociales para prevenir el TPA. Además, se destaca la complejidad de las intervenciones debido a la resistencia a la ayuda profesional (Arana Medina et al., 2019).</p>
+              </div>
+            </div>
+            <div class="interactive-section section-symbol-3" onclick="toggleContent(this)">
+              <h3>Síntomas y Comportamientos</h3>
+              <div class="hidden-content">
+                <p>Además de los síntomas básicos, se observan los siguientes comportamientos indicativos del TPA:</p>
+                <ul>
+                  <li>Desprecio de la ley, evidenciado por la comisión repetida de actos moralmente inaceptables.</li>
+                  <li>Engaño y mentiras frecuentes, uso de alias y estafas para beneficio personal o por placer.</li>
+                  <li>Actuación impulsiva sin planificación, manifestada en renuncias laborales y descuido de obligaciones económicas.</li>
+                  <li>Irritabilidad o agresividad, observada en peleas físicas o agresiones continuas.</li>
+                  <li>Imprudencia respecto a la seguridad propia y de terceros, con tendencia a descuidar situaciones de riesgo.</li>
+                  <li>Falta de remordimiento, reflejada en la indiferencia o racionalización tras dañar a otros.</li>
+                </ul>
+                <p>Estas conductas pueden manifestarse desde la adolescencia, aunque el diagnóstico formal se realiza en adultos (APA, 2013; Bridley, 2024).</p>
+              </div>
+            </div>
+            <div class="interactive-section section-symbol-4" onclick="toggleContent(this)">
+              <h3>Impacto y Consecuencias</h3>
+              <div class="hidden-content">
+                <p>El TPA tiene múltiples efectos negativos en la vida del individuo y su entorno:</p>
+                <ul>
+                  <li>La falta de control sobre sus conductas puede derivar en violencia, manipulación y agresiones que afectan a terceros.</li>
+                  <li>La dificultad para establecer relaciones interpersonales saludables genera conflictos y aislamiento social.</li>
+                  <li>El comportamiento irresponsable repercute en el ámbito laboral y financiero, provocando desempleo y problemas económicos.</li>
+                  <li>La exposición constante a represalias y castigos incrementa el riesgo de involucramiento en actividades delictivas.</li>
+                </ul>
+                <p>Estos efectos subrayan la importancia de intervenciones tempranas y tratamientos adecuados para mitigar el daño (APA, 2013; Bridley, 2024).</p>
+              </div>
+            </div>
+          </div>
+        `,
+        'Contexto Colombiano': `
+          <div class="interactive-content">
+            <p style="margin-bottom:20px; font-size:1em; color:#fff;">
+              Colombia no cuenta con datos ni estadísticas claras relacionadas con el Trastorno de Personalidad Antisocial (TPA). Sin embargo, las mejores aproximaciones estadísticas se basan en estudios sobre factores relacionados con el padecimiento del trastorno y datos de población vulnerable.
+            </p>
+            <div class="interactive-section section-symbol-6" onclick="toggleContent(this)">
+              <h3>Estadísticas Penitenciarias</h3>
+              <div class="hidden-content">
+                <p>Estudios en centros penitenciarios indican que entre el 30% y el 50% de la población carcelaria presenta rasgos del TPA. Además, se ha reportado que hasta un 80% de los internos consumen sustancias (DANE, 2019) y se observa un aumento en la violencia intrafamiliar, con casos que pasaron de 97.000 en 2016 a 119.000 en 2023.</p>
+              </div>
+            </div>
+            <div class="interactive-section section-symbol-7" onclick="toggleContent(this)">
+              <h3>Contexto Educativo</h3>
+              <div class="hidden-content">
+                <p>En el ámbito escolar, aproximadamente el 23% de los estudiantes han sido víctimas de acoso (OCDE, 2022) y se estima un 33.8% según estudios locales (Páez et al., 2021). Además, existen deficiencias en el registro y seguimiento de estos casos en el sistema (SUICE), lo que dificulta la intervención oportuna.</p>
+              </div>
+            </div>
+            <div class="interactive-section section-symbol-8" onclick="toggleContent(this)">
+              <h3>Marco Legal</h3>
+              <div class="hidden-content">
+                <p>El Artículo 33 de la Ley 599/1500 establece criterios de inimputabilidad basados en la capacidad de comprender la ilicitud del acto, sin considerar el TPA como causal de inimputabilidad, lo que genera debates sobre su tratamiento dentro del sistema de justicia.</p>
+              </div>
+            </div>
+            <div class="interactive-section section-symbol-9" onclick="toggleContent(this)">
+              <h3>Retos en el Tratamiento</h3>
+              <div class="hidden-content">
+                <p>El tratamiento del TPA en Colombia enfrenta desafíos significativos:</p>
+                <ul>
+                  <li>Escasez de protocolos y tratamientos efectivos.</li>
+                  <li>La falta de búsqueda de ayuda profesional por parte de los afectados y sus familias.</li>
+                  <li>Limitada acción de fármacos y recursos terapéuticos.</li>
+                  <li>Necesidad de enfoques diferenciados en el sistema de justicia.</li>
+                  <li>Altas tasas de reincidencia que complican la reintegración social.</li>
+                </ul>
+                <p>Estos retos evidencian la urgencia de desarrollar intervenciones preventivas y de rehabilitación temprana.</p>
+              </div>
+            </div>
+          </div>
+        `,
+        'Mitos vs Realidad': `
+          <div class="interactive-content">
+            <div class="interactive-section section-symbol-20" onclick="toggleContent(this)">
+              <h3>Mito: Ser antisocial significa ser introvertido o asocial</h3>
+              <div class="hidden-content">
+                <p>Este mito confunde dos conceptos muy distintos. Ser introvertido es una característica de la personalidad en la que la persona prefiere momentos y actividades solitarias, sin que implique un trastorno o problematica.</p>
+    <p>Ser asocial, puede describir a alguien que tiene poco interés en la interacción social, pero no necesariamente muestra comportamientos dañinos o violatorios de las normas.</p>
+    <p>Por lo tanto, confundir ser antisocial o el TPA con introversión o asocialidad es un error conceptual.</p>
+              </div>
+            </div>
+<div class="interactive-content">
+            <div class="interactive-section section-symbol-10" onclick="toggleContent(this)">
+              <h3>Mito: Todas las personas con TPA son criminales o asesinos</h3>
+              <div class="hidden-content">
+                <p>Este estereotipo infundado generaliza de forma errónea el comportamiento de quienes presentan TPA. Aunque el trastorno se asocia con conductas antisociales, la mayoría de las personas con TPA no incurren en delitos violentos ni se convierten en asesinos. Generalizar de este modo solo contribuye a la estigmatización y dificulta la intervención adecuada.</p>
+                <p>Las investigaciones indican que, si bien algunos pueden involucrarse en actividades delictivas, no es correcto afirmar que todas las personas con TPA sean criminales (APA, 2013; Bridley, 2024).</p>
+              </div>
+            </div>
+
+            <div class="interactive-section section-symbol-11" onclick="toggleContent(this)">
+              <h3>Mito: Las personas con TPA nunca pueden cambiar ni adaptarse a la sociedad</h3>
+              <div class="hidden-content">
+                <p>Esta creencia sostiene que el TPA es inmutable, pero estudios y enfoques terapéuticos demuestran que, aunque el cambio es complejo, es posible modificar patrones de conducta y mejorar la adaptación social mediante intervenciones especializadas.</p>
+                <p>El cambio requiere tiempo, compromiso y un entorno de apoyo, pero no es imposible transformar conductas destructivas en comportamientos más adaptativos (APA, 2013; Bridley, 2024).</p>
+              </div>
+            </div>
+          </div>
+        `,
+        'Identificación y prevención': `
+          <div class="interactive-content">
+            <div class="interactive-section section-symbol-12" onclick="toggleContent(this)">
+              <h3>Estrategias para Familias</h3>
+              <div class="hidden-content">
+                <p>Los familiares desempeñan un papel crucial en la detección temprana del TPA. Es importante observar señales como conductas agresivas, falta de empatía y resistencia a la disciplina en la infancia. Fomentar un ambiente de comunicación abierta y buscar apoyo profesional ante comportamientos preocupantes es fundamental (APA, 2013; Arana Medina et al., 2019).</p>
+                <p>Además, participar en talleres de intervención temprana y en programas de apoyo familiar puede ayudar a prevenir la consolidación de conductas antisociales.</p>
+              </div>
+            </div>
+            <div class="interactive-section section-symbol-13" onclick="toggleContent(this)">
+              <h3>Estrategias para Educadores</h3>
+              <div class="hidden-content">
+                <p>Los educadores deben estar alerta a señales de conducta disruptiva, acoso escolar y actitudes que indiquen falta de empatía o agresividad. La formación continua y la implementación de protocolos de intervención permiten identificar y abordar estos comportamientos a tiempo (OCDE, 2022; Páez et al., 2021).</p>
+                <p>La colaboración con psicólogos y orientadores escolares es esencial para crear un entorno de apoyo y favorecer la integración de todos los estudiantes.</p>
+              </div>
+            </div>
+            <div class="interactive-section section-symbol-14" onclick="toggleContent(this)">
+              <h3>Estrategias para el Público General</h3>
+              <div class="hidden-content">
+                <p>El público en general puede contribuir reconociendo comportamientos de riesgo en su entorno y apoyando iniciativas de prevención. La difusión de información veraz y la eliminación de estigmas son clave para crear una red de apoyo social (Bridley, 2024; Delgado et al., 2022).</p>
+                <p>Asimismo, colaborar con organizaciones y profesionales especializados facilita la reintegración social y la rehabilitación de personas con TPA.</p>
+              </div>
+            </div>
+            <div class="interactive-section section-symbol-15" onclick="toggleContent(this)">
+              <h3>Identificación Temprana en Infantes</h3>
+              <div class="hidden-content">
+                <p>Detectar señales atípicas en la primera infancia es fundamental para intervenir antes de que se consoliden patrones antisociales. La falta de empatía, dificultades para compartir y conductas agresivas son algunas de las alertas que se deben monitorear (Caligor & Clarkin, 2010).</p>
+                <p>La implementación de programas de educación emocional y habilidades sociales desde temprana edad puede favorecer un desarrollo emocional saludable y prevenir el desarrollo del TPA.</p>
+              </div>
+            </div>
+          </div>
+        `,
+        'TPA': `
+          <div class="interactive-content">
+            <div class="interactive-section" style="text-align: center;" onclick="toggleContent(this)">
+              <h3>Trastorno de Personalidad Antisocial <br> ¿Psicópatas? <->¿Criminales?</h3>
+              <div class="hidden-content open">
+                <p>
+                  Bienvenidos a una invitación para explorar el Trastorno de Personalidad Antisocial (TPA). 
+                  Este trastorno es complejo y los estereotipos y creencias sobre él pueden dificultar tanto su tratamiento como su comprensión.
+                  Aquí encontrarás su definición, los mitos y realidades, pautas para identificarlo, estrategias de actuación y el contexto en nuestro país.
+                </p>
+              </div>
+            </div>
+          </div>
+        `
+      };
+      const title = section.querySelector('h2').textContent;
+      content.innerHTML = sectionContent[title];
+      overlay.classList.add('active');
+    }
+    // Alternancia de videos de fondo
+    const video1 = document.getElementById("video1");
+    const video2 = document.getElementById("video2");
+    video1.addEventListener("ended", function() {
+      video1.style.opacity = 0;
+      video2.style.opacity = 1;
+      video2.currentTime = 0;
+      video2.play();
+    });
+    video2.addEventListener("ended", function() {
+      video2.style.opacity = 0;
+      video1.style.opacity = 1;
+      video1.currentTime = 0;
+      video1.play();
+    });
+    // Funciones para el modal de información
+    function openInfoModal() {
+      document.getElementById("infoModal").style.display = "flex";
+    }
+    function closeInfoModal() {
+      document.getElementById("infoModal").style.display = "none";
+    }
+  </script>
+</body>
+</html>
+
